@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zinnia Life: FAST Migration Sentinel</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    
+    <!-- Socket.io Client CDN -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Glassmorphism Effect */
+        .glass {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        
+        /* Glowing Effects */
+        .glow-blue {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3),
+                        inset 0 0 20px rgba(59, 130, 246, 0.05);
+        }
+        
+        .glow-purple {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3),
+                        inset 0 0 20px rgba(168, 85, 247, 0.05);
+        }
+        
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.3),
+                        inset 0 0 20px rgba(34, 211, 238, 0.05);
+        }
+        
+        /* Pulsing Animation */
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(59, 130, 246, 0.3),
+                            inset 0 0 20px rgba(59, 130, 246, 0.05);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(59, 130, 246, 0.6),
+                            inset 0 0 40px rgba(59, 130, 246, 0.1);
+            }
+        }
+        
+        .pulse-node {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        
+        /* Status Indicator Blink */
+        @keyframes status-blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-indicator {
+            animation: status-blink 1.5s ease-in-out infinite;
+        }
+        
+        /* Smooth Transitions */
+        .fade-in {
+            animation: fadeIn 0.6s ease-in forwards;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Slide In Animation */
+        .slide-in-left {
+            animation: slideInLeft 0.8s ease-out forwards;
+        }
+        
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Drag Over Effect */
+        .drag-over {
+            background: rgba(59, 130, 246, 0.1);
+            border-color: rgb(59, 130, 246);
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.4),
+                        inset 0 0 30px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Scrollbar Styling */
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: rgba(71, 85, 105, 0.1);
+            border-radius: 10px;
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.4);
+            border-radius: 10px;
+        }
+        
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.6);
+        }
+        
+        /* Node Connection Line */
+        .pipeline-connector {
+            background: linear-gradient(to right, 
+                rgba(59, 130, 246, 0.1), 
+                rgba(168, 85, 247, 0.1));
+            border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Active Node Indicator */
+        .node-active {
+            border-color: rgb(59, 130, 246);
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Badge Styles */
+        .badge-critical {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
+            border: 2px solid rgb(239, 68, 68);
+            color: rgb(254, 226, 226);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+        }
+        
+        .badge-safe {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.2));
+            border: 2px solid rgb(34, 197, 94);
+            color: rgb(220, 252, 231);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+        }
+        
+        /* File Upload Button */
+        .upload-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgb(59, 130, 246);
+        }
+        
+        /* Anomaly Item */
+        .anomaly-item {
+            background: rgba(148, 163, 184, 0.05);
+            border-left: 3px solid rgb(59, 130, 246);
+            transition: all 0.3s ease;
+        }
+        
+        .anomaly-item:hover {
+            background: rgba(148, 163, 184, 0.1);
+            border-left-color: rgb(168, 85, 247);
+            transform: translateX(4px);
+        }
+        
+        /* Critical Anomaly */
+        .anomaly-critical {
+            border-left-color: rgb(239, 68, 68);
+            background: rgba(239, 68, 68, 0.08);
+        }
+        
+        .anomaly-critical:hover {
+            background: rgba(239, 68, 68, 0.12);
+        }
+        
+        .anomaly-normal {
+            border-left-color: rgb(59, 130, 246);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 overflow-x-hidden">
+    
+    <!-- ============================================================================ -->
+    <!-- HEADER / TOP NAV -->
+    <!-- ============================================================================ -->
+    <header class="glass border-b border-slate-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <!-- Logo & Title -->
+            <div class="flex items-center gap-3">
+                <img src="/assets/zinnia-logo.png" alt="Zinnia Logo" class="w-12 h-12 object-contain">
+                <div>
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                        Zinnia Life
+                    </h1>
+                    <p class="text-xs text-slate-400">FAST Migration Sentinel</p>
+                </div>
+            </div>
+            
+            <!-- Visions Images -->
+            <div class="hidden md:flex items-center gap-4">
+                <img src="/assets/be-bold.png" alt="Be Bold" class="h-8 object-contain hover:scale-110 transition-transform duration-300 cursor-pointer" title="Be Bold">
+                <img src="/assets/team-up.png" alt="Team Up" class="h-8 object-contain hover:scale-110 transition-transform duration-300 cursor-pointer" title="Team Up">
+                <img src="/assets/deliver-value.png" alt="Deliver Value" class="h-8 object-contain hover:scale-110 transition-transform duration-300 cursor-pointer" title="Deliver Value">
+            </div>
+            
+            <!-- Status Indicator -->
+            <div class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 border border-slate-700">
+                <div class="w-2 h-2 rounded-full bg-green-500 status-indicator"></div>
+                <span class="text-sm font-medium text-slate-300">System Online</span>
+            </div>
+        </div>
+    </header>
+    
+    <!-- ============================================================================ -->
+    <!-- MAIN CONTENT -->
+    <!-- ============================================================================ -->
+    <main class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-6">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- ============================================================ -->
+            <!-- DROPZONE SECTION (Initially Visible) -->
+            <!-- ============================================================ -->
+            <div id="dropzoneSection" class="transition-all duration-500">
+                <div class="text-center mb-8">
+                    <h2 class="text-4xl font-bold mb-2">
+                        <span class="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                            Begin Migration Analysis
+                        </span>
+                    </h2>
+                    <p class="text-slate-400 text-lg mb-6">Upload historical insurance statements for anomaly detection</p>
+                    
+                    <!-- Zinnia Visions - Highlighted Section -->
+                    <div class="max-w-3xl mx-auto mb-8">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <!-- Be Bold -->
+                            <div class="p-4 rounded-xl glass border border-blue-500/30 hover:border-blue-500/60 transition-all hover:scale-105 duration-300">
+                                <img src="/assets/be-bold.png" alt="Be Bold" class="h-12 mx-auto mb-3 object-contain">
+                                <h3 class="text-sm font-bold text-blue-300 mb-1">Be Bold</h3>
+                                <p class="text-xs text-slate-400">Take decisive action on insurance data anomalies</p>
+                            </div>
+                            
+                            <!-- Team Up -->
+                            <div class="p-4 rounded-xl glass border border-purple-500/30 hover:border-purple-500/60 transition-all hover:scale-105 duration-300">
+                                <img src="/assets/team-up.png" alt="Team Up" class="h-12 mx-auto mb-3 object-contain">
+                                <h3 class="text-sm font-bold text-purple-300 mb-1">Team Up</h3>
+                                <p class="text-xs text-slate-400">Collaborate seamlessly with multiple file analysis</p>
+                            </div>
+                            
+                            <!-- Deliver Value -->
+                            <div class="p-4 rounded-xl glass border border-green-500/30 hover:border-green-500/60 transition-all hover:scale-105 duration-300">
+                                <img src="/assets/deliver-value.png" alt="Deliver Value" class="h-12 mx-auto mb-3 object-contain">
+                                <h3 class="text-sm font-bold text-green-300 mb-1">Deliver Value</h3>
+                                <p class="text-xs text-slate-400">Real-time insights to safeguard client interests</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="filePreviewSection" class="hidden w-full max-w-3xl mx-auto mb-6">
+                    <div class="glass glow-cyan rounded-xl border border-slate-700 p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-bold text-slate-100">📋 Selected Files</h3>
+                            <span id="fileCountBadge" class="px-3 py-1 rounded-full bg-blue-900 text-blue-200 text-sm font-medium">0 files</span>
+                        </div>
+                        
+                        <!-- File List -->
+                        <div id="fileListContainer" class="space-y-2 mb-4 max-h-48 overflow-y-auto scrollbar-custom">
+                            <!-- Files will be added here dynamically -->
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3">
+                            <button 
+                                id="addMoreFilesBtn"
+                                class="flex-1 py-2 px-4 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium transition-all duration-300"
+                            >
+                                + Add More Files
+                            </button>
+                            <button 
+                                id="clearFilesBtn"
+                                class="flex-1 py-2 px-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-100 font-medium transition-all duration-300"
+                            >
+                                Clear Selection
+                            </button>
+                            <button 
+                                id="analyzeFilesBtn"
+                                class="flex-1 py-2 px-4 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-medium transition-all duration-300"
+                            >
+                                🚀 Analyze All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Drag & Drop Zone -->
+                <div 
+                    id="dropZone"
+                    class="relative w-full max-w-3xl mx-auto mb-6 p-12 rounded-2xl glass glow-blue border-2 border-dashed border-slate-600 transition-all duration-300 cursor-pointer group hover:border-blue-500"
+                >
+                    <input 
+                        type="file" 
+                        id="fileInput" 
+                        multiple 
+                        accept=".pdf" 
+                        class="hidden"
+                    >
+                    
+                    <div class="text-center">
+                        <!-- Upload Icon -->
+                        <div class="mb-6 flex justify-center">
+                            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        
+                        <h3 class="text-2xl font-bold mb-2 text-slate-100">Drop Historical Statements Here</h3>
+                        <p class="text-slate-400 mb-4"> Upload multiple PDFs to analyze • Automatic FAST to Zinnia Life reconciliation</p>
+                        
+                        <button 
+                            id="uploadBtn"
+                            class="px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium transition-all duration-300 transform hover:scale-105"
+                        >
+                            Or Click to Select Files
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- File Info -->
+                <div class="text-center">
+                    <p class="text-slate-500 text-sm">💡 Tip: Select files from different folders - they'll be processed together!</p>
+                </div>
+            </div>
+            
+            <!-- ============================================================ -->
+            <!-- PIPELINE VISUALIZER (Hidden Initially) -->
+            <!-- ============================================================ -->
+            <div id="pipelineSection" class="hidden opacity-0">
+                <div class="mb-12 fade-in">
+                    <h3 class="text-2xl font-bold mb-2 text-center">🚀 Intelligent Processing Pipeline</h3>
+                    <p class="text-center text-slate-400 mb-8 text-sm">Real-time analysis powered by AI • Built with Zinnia's vision of delivering value</p>
+                    
+                    <!-- Pipeline Nodes -->
+                    <div class="flex items-center justify-between max-w-4xl mx-auto">
+                        <!-- Node 1 -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div id="node1" class="w-16 h-16 rounded-full glass border-2 border-slate-600 node-active pulse-node flex items-center justify-center mb-3 relative">
+                                <div class="absolute inset-0 rounded-full bg-blue-500 opacity-0 animate-ping"></div>
+                                <svg class="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                            </div>
+                            <p class="text-sm font-medium text-slate-300 text-center">Ingesting Files</p>
+                        </div>
+                        
+                        <!-- Connector 1 -->
+                        <div class="flex-1 h-1 pipeline-connector mx-2"></div>
+                        
+                        <!-- Node 2 -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div id="node2" class="w-16 h-16 rounded-full glass border-2 border-slate-600 flex items-center justify-center mb-3">
+                                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-sm font-medium text-slate-400 text-center">Kafka Queue</p>
+                        </div>
+                        
+                        <!-- Connector 2 -->
+                        <div class="flex-1 h-1 pipeline-connector mx-2"></div>
+                        
+                        <!-- Node 3 -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div id="node3" class="w-16 h-16 rounded-full glass border-2 border-slate-600 flex items-center justify-center mb-3">
+                                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-sm font-medium text-slate-400 text-center">AI Analysis</p>
+                        </div>
+                        
+                        <!-- Connector 3 -->
+                        <div class="flex-1 h-1 pipeline-connector mx-2"></div>
+                        
+                        <!-- Node 4 -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div id="node4" class="w-16 h-16 rounded-full glass border-2 border-slate-600 flex items-center justify-center mb-3">
+                                <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-sm font-medium text-slate-400 text-center">Risk Report</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Loading Status -->
+                <div class="text-center mb-12">
+                    <p id="statusMessage" class="text-slate-400 text-sm">Ingesting files into pipeline...</p>
+                </div>
+            </div>
+            
+            <!-- ============================================================ -->
+            <!-- REPORT DASHBOARD (Hidden Initially) -->
+            <!-- ============================================================ -->
+            <div id="reportSection" class="hidden opacity-0">
+                <!-- Zinnia Vision Banner -->
+                <div class="mb-8 p-6 rounded-xl glass glow-cyan border border-slate-700 text-center">
+                    <p class="text-sm text-slate-300">
+                        <span class="font-bold text-green-300">✓ Analysis Complete</span> • 
+                        Delivering value through intelligent insights • 
+                        <span class="text-xs text-slate-400">Powered by Zinnia's commitment to excellence</span>
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 fade-in">
+                    
+                    <!-- LEFT SIDE: Summary -->
+                    <div class="lg:col-span-1">
+                        <div class="glass glow-purple rounded-xl p-8 border border-slate-700 sticky top-24">
+                            <h3 class="text-lg font-bold mb-6 text-slate-100">Analysis Summary</h3>
+                            
+                            <!-- Job ID -->
+                            <div class="mb-6">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-2">Job ID</p>
+                                <p id="jobIdDisplay" class="font-mono text-sm text-blue-400 break-all">-</p>
+                            </div>
+                            
+                            <!-- Files Processed -->
+                            <div class="mb-6" data-section-type="files">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-2">Files Processed</p>
+                                <p id="fileCountDisplay" class="text-2xl font-bold text-slate-100">1</p>
+                            </div>
+                            
+                            <!-- Status Badge -->
+                            <div class="mb-8">
+                                <p class="text-xs text-slate-400 uppercase tracking-wider mb-3">Status</p>
+                                <div id="statusBadge" class="badge-safe py-3 px-4 rounded-lg text-center font-bold text-lg">
+                                    MIGRATION SAFE
+                                </div>
+                            </div>
+                            
+                            <!-- Actions -->
+                            <button 
+                                id="resetBtn"
+                                class="w-full py-2 px-4 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-100 font-medium transition-all duration-300 mb-3"
+                            >
+                                Reset Dashboard
+                            </button>
+                            
+                            <button 
+                                id="downloadBtn"
+                                class="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-medium transition-all duration-300 mb-3"
+                            >
+                                Download Report
+                            </button>
+                            
+                            <button 
+                                id="viewExtractionBtn"
+                                class="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-medium transition-all duration-300"
+                            >
+                                View Extracted Content
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- RIGHT SIDE: Findings Console -->
+                    <div class="lg:col-span-2">
+                        <div class="glass glow-cyan rounded-xl border border-slate-700 overflow-hidden">
+                            <div class="bg-slate-800 border-b border-slate-700 px-6 py-4">
+                                <h3 class="font-bold text-slate-100 flex items-center gap-2">
+                                    <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    Anomaly Findings
+                                </h3>
+                            </div>
+                            
+                            <div id="findingsList" class="p-6 space-y-4">
+                                <!-- Findings will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- ============================================================================ -->
+    <!-- JAVASCRIPT: Core Logic with Socket.io Real-Time Telemetry -->
+    <!-- ============================================================================ -->
+    <script>
+        // =====================================================
+        // STATE & CONFIGURATION
+        // =====================================================
+        
+        let uploadedFiles = [];
+        let selectedFilesForAnalysis = [];  // ← NEW: Track cumulative selection
+        const MAX_FILES = 7;  // ← Changed from 5 to 7
+        const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+        let currentJobId = null;
+        let socket = null;
+        
+        // DOM Elements
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const dropzoneSection = document.getElementById('dropzoneSection');
+        const pipelineSection = document.getElementById('pipelineSection');
+        const reportSection = document.getElementById('reportSection');
+        const statusMessage = document.getElementById('statusMessage');
+        const resetBtn = document.getElementById('resetBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        // NEW: File preview elements
+        const filePreviewSection = document.getElementById('filePreviewSection');
+        const fileListContainer = document.getElementById('fileListContainer');
+        const fileCountBadge = document.getElementById('fileCountBadge');
+        const addMoreFilesBtn = document.getElementById('addMoreFilesBtn');
+        const clearFilesBtn = document.getElementById('clearFilesBtn');
+        const analyzeFilesBtn = document.getElementById('analyzeFilesBtn');
+        
+        // Pipeline Nodes
+        const node1 = document.getElementById('node1');
+        const node2 = document.getElementById('node2');
+        const node3 = document.getElementById('node3');
+        const node4 = document.getElementById('node4');
+        
+        // =====================================================
+        // SOCKET.IO INITIALIZATION
+        // =====================================================
+        
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                console.log('✓ Connected to WebSocket server');
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('✗ Disconnected from WebSocket server');
+            });
+            
+            // Listen for job status updates from Python worker via Node webhook
+            socket.on('job:update', (data) => {
+                console.log(`📡 Job update received: ${data.status}`, data);
+                
+                if (data.jobId !== currentJobId) {
+                    return; // Ignore updates for other jobs
+                }
+                
+                if (data.status === 'PROCESSING') {
+                    handleProcessingStatus(data);
+                } else if (data.status === 'COMPLETE') {
+                    handleCompleteStatus(data);
+                } else if (data.status === 'ERROR') {
+                    handleErrorStatus(data);
+                }
+            });
+        }
+        
+        // =====================================================
+        // REAL-TIME STATUS HANDLERS
+        // =====================================================
+        
+        function handleProcessingStatus(data) {
+            console.log('🔄 Worker is processing...');
+            
+            // Clear old findings from previous analysis
+            const findingsList = document.getElementById('findingsList');
+            findingsList.innerHTML = '';
+            
+            // Show pipeline section
+            pipelineSection.classList.remove('hidden');
+            pipelineSection.classList.remove('opacity-0');
+            reportSection.classList.add('hidden');
+            reportSection.classList.add('opacity-0');
+            dropzoneSection.classList.add('hidden');
+            
+            // Light up node 1 (already should be lit)
+            activateNode(node1, 'Ingesting files...');
+            
+            // Light up node 2 (Kafka Queue)
+            setTimeout(() => {
+                activateNode(node2, 'Queued in Kafka...');
+            }, 800);
+            
+            // After a brief delay, light up node 3 (AI Analysis)
+            setTimeout(() => {
+                activateNode(node3, 'Analyzing with AI...');
+            }, 1600);
+        }
+        
+        function handleCompleteStatus(data) {
+            console.log('✅ Analysis complete!');
+            
+            // Light up node 4 (final node)
+            activateNode(node4, 'Generating report...');
+            
+            // Wait a moment, then show report
+            setTimeout(() => {
+                // Display the real report from worker
+                if (data.report) {
+                    displayRealReport(data.report);
+                } else {
+                    console.warn('No report included in COMPLETE status');
+                }
+            }, 1000);
+        }
+        
+        function handleErrorStatus(data) {
+            console.error('❌ Job processing error:', data.message);
+            statusMessage.textContent = `Error: ${data.message}`;
+            alert(`Job failed: ${data.message}`);
+            resetDashboard();
+        }
+        
+        // =====================================================
+        // DISPLAY REAL REPORT FROM WORKER
+        // =====================================================
+        
+        function displayRealReport(report) {
+            try {
+                // Populate summary
+                document.getElementById('jobIdDisplay').textContent = report.job_metadata?.jobId || currentJobId;
+                document.getElementById('fileCountDisplay').textContent = selectedFilesForAnalysis.length;  // ← Use actual selected files
+                
+                // Determine status badge
+                const summary = report.summary || {};
+                const hasCritical = (report.anomalies || []).some(a => a.severity === 'critical');
+                const badgeEl = document.getElementById('statusBadge');
+                
+                if (hasCritical) {
+                    badgeEl.classList.remove('badge-safe');
+                    badgeEl.classList.add('badge-critical');
+                    badgeEl.textContent = 'CRITICAL ANOMALY DETECTED';
+                } else {
+                    badgeEl.classList.remove('badge-critical');
+                    badgeEl.classList.add('badge-safe');
+                    badgeEl.textContent = 'MIGRATION SAFE';
+                }
+                
+                // Get the sticky summary container
+                const summaryContainer = document.querySelector('.lg\\:col-span-1 .sticky');
+                
+                // Remove any existing metric sections to prevent duplicates
+                const existingMetrics = summaryContainer.querySelectorAll('[data-metric-type]');
+                existingMetrics.forEach(el => el.remove());
+                
+                // Add anomaly breakdown if available
+                if (summary.total_anomalies_detected !== undefined) {
+                    const breakdownDiv = document.createElement('div');
+                    breakdownDiv.setAttribute('data-metric-type', 'anomalies');
+                    breakdownDiv.className = 'mb-6 p-4 rounded-lg bg-slate-700/50 border border-slate-600';
+                    breakdownDiv.innerHTML = `
+                        <p class="text-xs text-slate-400 uppercase tracking-wider mb-3">Anomalies Found</p>
+                        <div class="space-y-2">
+                            ${summary.critical_count > 0 ? `<div class="flex justify-between items-center text-sm">
+                                <span class="text-red-400">🔴 Critical</span>
+                                <span class="font-bold text-red-300">${summary.critical_count}</span>
+                            </div>` : ''}
+                            ${summary.high_count > 0 ? `<div class="flex justify-between items-center text-sm">
+                                <span class="text-orange-400">🟠 High</span>
+                                <span class="font-bold text-orange-300">${summary.high_count}</span>
+                            </div>` : ''}
+                            ${summary.medium_count > 0 ? `<div class="flex justify-between items-center text-sm">
+                                <span class="text-yellow-400">🟡 Medium</span>
+                                <span class="font-bold text-yellow-300">${summary.medium_count}</span>
+                            </div>` : ''}
+                            ${summary.low_count > 0 ? `<div class="flex justify-between items-center text-sm">
+                                <span class="text-blue-400">🔵 Low</span>
+                                <span class="font-bold text-blue-300">${summary.low_count}</span>
+                            </div>` : ''}
+                            <div class="border-t border-slate-600 pt-2 mt-2">
+                                <span class="text-xs text-slate-400">Total: ${summary.total_anomalies_detected}</span>
+                            </div>
+                        </div>
+                    `;
+                    summaryContainer.insertBefore(breakdownDiv, summaryContainer.querySelector('.mb-8'));
+                }
+                
+                // Build findings list from anomalies
+                const findingsList = document.getElementById('findingsList');
+                findingsList.innerHTML = '';
+                
+                const anomalies = report.anomalies || [];
+                if (anomalies.length === 0) {
+                    const noAnomaliesEl = document.createElement('div');
+                    noAnomaliesEl.className = 'anomaly-item p-4 rounded-lg';
+                    noAnomaliesEl.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="text-slate-300">No anomalies detected - migration appears safe</span>
+                        </div>
+                    `;
+                    findingsList.appendChild(noAnomaliesEl);
+                } else {
+                    anomalies.forEach((anomaly, idx) => {
+                        const findingEl = document.createElement('div');
+                        findingEl.className = `anomaly-item p-4 rounded-lg ${anomaly.severity === 'critical' ? 'anomaly-critical' : 'anomaly-normal'}`;
+                        findingEl.style.animation = `fadeIn 0.6s ease-out ${idx * 150}ms forwards`;
+                        findingEl.style.opacity = '0';
+                        
+                        const severityColor = {
+                            critical: 'text-red-400 bg-red-900/30',
+                            high: 'text-orange-400 bg-orange-900/30',
+                            medium: 'text-yellow-400 bg-yellow-900/30',
+                            low: 'text-blue-400 bg-blue-900/30'
+                        }[anomaly.severity] || 'text-slate-400 bg-slate-900/30';
+                        
+                        const severityIcon = {
+                            critical: '⚠️',
+                            high: '⚡',
+                            medium: '⚙️',
+                            low: 'ℹ️'
+                        }[anomaly.severity] || '📌';
+                        
+                        const riskColor = {
+                            'HIGH': 'text-red-400',
+                            'MEDIUM': 'text-yellow-400',
+                            'LOW': 'text-blue-400'
+                        }[anomaly.risk_level] || 'text-slate-400';
+                        
+                        findingEl.innerHTML = `
+                            <div class="flex items-start gap-3 mb-3">
+                                <span class="text-lg">${severityIcon}</span>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h4 class="font-bold text-slate-100">${anomaly.type.replace(/_/g, ' ').toUpperCase()}</h4>
+                                        <span class="px-2 py-0.5 text-xs font-bold rounded-full ${severityColor} uppercase">
+                                            ${anomaly.severity}
+                                        </span>
+                                        ${anomaly.risk_level ? `<span class="px-2 py-0.5 text-xs font-bold rounded-full ${riskColor} uppercase">Risk: ${anomaly.risk_level}</span>` : ''}
+                                    </div>
+                                    <p class="text-slate-400 text-sm mb-2">${anomaly.description}</p>
+                                    ${anomaly.change_percentage ? `
+                                        <div class="mb-2 p-2 bg-slate-800/50 rounded text-xs text-slate-300">
+                                            Change: <span class="font-mono ${anomaly.change_percentage < 0 ? 'text-red-400' : 'text-green-400'}">${anomaly.change_percentage > 0 ? '+' : ''}${anomaly.change_percentage.toFixed(1)}%</span>
+                                        </div>
+                                    ` : ''}
+                                    <div class="flex items-start gap-2 text-xs text-slate-500">
+                                        <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                        <span>${anomaly.recommendation || 'Review this anomaly'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        findingsList.appendChild(findingEl);
+                    });
+                }
+                
+                // Show report section after a delay
+                setTimeout(() => {
+                    pipelineSection.classList.add('hidden');
+                    pipelineSection.classList.add('opacity-0');
+                    reportSection.classList.remove('hidden');
+                    reportSection.classList.remove('opacity-0');
+                    reportSection.classList.add('fade-in');
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error displaying report:', error);
+            }
+        }
+        
+        // =====================================================
+        // DRAG & DROP HANDLERS
+        // =====================================================
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('drag-over');
+        });
+        
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('drag-over');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('drag-over');
+            
+            const files = Array.from(e.dataTransfer.files);
+            handleFiles(files);
+        });
+        
+        uploadBtn.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files)));
+        
+        // NEW: File preview button handlers
+        addMoreFilesBtn.addEventListener('click', () => fileInput.click());
+        clearFilesBtn.addEventListener('click', clearAllFiles);
+        analyzeFilesBtn.addEventListener('click', uploadToServer);
+        
+        // =====================================================
+        // FILE HANDLING - Enhanced with Preview
+        // =====================================================
+        
+        function handleFiles(files) {
+            // Validate files
+            const validFiles = files.filter(file => {
+                if (file.type !== 'application/pdf') {
+                    console.error(`Invalid file type: ${file.name}`);
+                    return false;
+                }
+                if (file.size > MAX_FILE_SIZE) {
+                    console.error(`File too large: ${file.name}`);
+                    return false;
+                }
+                return true;
+            });
+            
+            if (validFiles.length === 0) {
+                alert('Please select valid PDF files (max 50MB each)');
+                return;
+            }
+            
+            // Check total doesn't exceed MAX_FILES
+            if (selectedFilesForAnalysis.length + validFiles.length > MAX_FILES) {
+                alert(`Maximum ${MAX_FILES} files total. Currently have ${selectedFilesForAnalysis.length}. Can add ${MAX_FILES - selectedFilesForAnalysis.length} more.`);
+                return;
+            }
+            
+            // Add to cumulative selection
+            selectedFilesForAnalysis = [...selectedFilesForAnalysis, ...validFiles];
+            
+            // Update UI
+            updateFilePreview();
+            
+            // Show file preview section (IMPORTANT: Don't upload yet!)
+            filePreviewSection.classList.remove('hidden');
+            fileInput.value = '';  // Reset file input
+            
+            console.log(`📁 Files selected: ${selectedFilesForAnalysis.length}`);
+        }
+        
+        function updateFilePreview() {
+            // Update badge
+            fileCountBadge.textContent = `${selectedFilesForAnalysis.length} file${selectedFilesForAnalysis.length !== 1 ? 's' : ''}`;
+            
+            // Update list
+            fileListContainer.innerHTML = '';
+            selectedFilesForAnalysis.forEach((file, index) => {
+                const fileEl = document.createElement('div');
+                fileEl.className = 'flex items-center justify-between p-3 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors';
+                fileEl.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1">
+                        <svg class="w-5 h-5 text-blue-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-slate-100">${file.name}</p>
+                            <p class="text-xs text-slate-500">${(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                        </div>
+                    </div>
+                    <button 
+                        onclick="removeFile(${index})"
+                        class="ml-2 p-1 hover:bg-slate-600 rounded transition-colors"
+                        title="Remove file"
+                    >
+                        <svg class="w-5 h-5 text-red-400 hover:text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                `;
+                fileListContainer.appendChild(fileEl);
+            });
+        }
+        
+        function removeFile(index) {
+            selectedFilesForAnalysis.splice(index, 1);
+            updateFilePreview();
+            
+            // Hide preview if no files
+            if (selectedFilesForAnalysis.length === 0) {
+                filePreviewSection.classList.add('hidden');
+            }
+        }
+        
+        function clearAllFiles() {
+            if (confirm('Clear all selected files?')) {
+                selectedFilesForAnalysis = [];
+                filePreviewSection.classList.add('hidden');
+                updateFilePreview();
+            }
+        }
+        
+        // =====================================================
+        // SERVER COMMUNICATION
+        // =====================================================
+        
+        async function uploadToServer() {
+            try {
+                if (selectedFilesForAnalysis.length === 0) {
+                    alert('Please select files first');
+                    return;
+                }
+                
+                // Show pipeline section
+                transitionToPipeline();
+                
+                // Prepare FormData with selected files
+                const formData = new FormData();
+                selectedFilesForAnalysis.forEach(file => {
+                    formData.append('statements', file);
+                });
+                
+                // Send request
+                const response = await fetch('/api/analyze-timeline', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.status !== 202) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                currentJobId = data.jobId;
+                console.log(`📋 Job created: ${currentJobId}`);
+                
+                // Activate node 1 (already done in transitionToPipeline)
+                // Activate node 2 after brief delay
+                setTimeout(() => {
+                    activateNode(node2, 'Queued in Kafka...');
+                }, 500);
+                
+                // Wait for Socket.io updates - worker will trigger node 3 and 4
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Failed to upload files. Ensure the server is running.');
+                resetDashboard();
+            }
+        }
+        
+        // =====================================================
+        // UI TRANSITIONS
+        // =====================================================
+        
+        function transitionToDropzone() {
+            dropzoneSection.classList.remove('hidden');
+            pipelineSection.classList.add('hidden');
+            reportSection.classList.add('hidden');
+            fileInput.value = '';
+            resetPipelineNodes();
+        }
+        
+        function transitionToPipeline() {
+            dropzoneSection.classList.add('hidden');
+            pipelineSection.classList.remove('hidden');
+            pipelineSection.classList.remove('opacity-0');  // ← Remove opacity too!
+            reportSection.classList.add('hidden');
+            reportSection.classList.add('opacity-0');
+            
+            // Activate first node immediately
+            activateNode(node1, 'Ingesting files into pipeline...');
+        }
+        
+        function resetPipelineNodes() {
+            [node1, node2, node3, node4].forEach(node => {
+                node.classList.remove('node-active', 'pulse-node');
+                node.querySelector('svg').classList.add('text-slate-400');
+            });
+        }
+        
+        function activateNode(node, message) {
+            node.classList.add('node-active', 'pulse-node');
+            node.querySelector('svg').classList.remove('text-slate-400');
+            if (message) {
+                statusMessage.textContent = message;
+            }
+        }
+        
+        function resetDashboard() {
+            transitionToDropzone();
+        }
+        
+        function resetToDropzone() {
+            uploadedFiles = [];
+            selectedFilesForAnalysis = [];  // ← Clear cumulative selection
+            currentJobId = null;
+            filePreviewSection.classList.add('hidden');
+            transitionToDropzone();
+            dropzoneSection.classList.add('fade-in');
+        }
+        
+        // =====================================================
+        // BUTTON HANDLERS
+        // =====================================================
+        
+        resetBtn.addEventListener('click', () => {
+            uploadedFiles = [];
+            selectedFilesForAnalysis = [];  // ← Clear cumulative selection
+            currentJobId = null;
+            filePreviewSection.classList.add('hidden');
+            transitionToDropzone();
+            dropzoneSection.classList.add('fade-in');
+        });
+        
+        downloadBtn.addEventListener('click', () => {
+            const jobId = document.getElementById('jobIdDisplay').textContent;
+            const report = {
+                jobId,
+                timestamp: new Date().toISOString(),
+                fileCount: selectedFilesForAnalysis.length,  // ← Use actual count
+                status: document.getElementById('statusBadge').textContent,
+                generatedAt: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(report, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `report_${jobId}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        });
+        
+        // View Extracted Content Handler
+        document.getElementById('viewExtractionBtn').addEventListener('click', async () => {
+            const jobId = document.getElementById('jobIdDisplay').textContent;
+            
+            try {
+                const response = await fetch(`/api/get-extraction/${jobId}`);
+                const data = await response.json();
+                
+                // Create a modal to show extraction
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.7);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 1000;
+                `;
+                
+                // Count PDFs mentioned
+                const pdfContent = data.pdfContent || '';
+                const docCount = (pdfContent.match(/--- Document \d+ ---/g) || []).length;
+                
+                modal.innerHTML = `
+                    <div style="background: #1e293b; padding: 30px; border-radius: 12px; width: 95%; max-height: 95%; overflow-y: auto; border: 2px solid #3b82f6;">
+                        <h2 style="color: #fff; margin-bottom: 20px; font-size: 24px;">Extracted Content</h2>
+                        
+                        <div style="color: #cbd5e1; margin-bottom: 20px; border-bottom: 1px solid #475569; padding-bottom: 15px;">
+                            <p><strong>Job ID:</strong> ${data.jobId}</p>
+                            <p><strong>Files Processed:</strong> ${data.fileCount}</p>
+                            <p><strong>Documents Found in PDF:</strong> ${docCount || 1}</p>
+                            <p><strong>Total PDF Content Length:</strong> ${data.fullPdfLength || 0} characters</p>
+                            <p><strong>Anomalies Found:</strong> ${data.anomaliesFound}</p>
+                        </div>
+                        
+                        <h3 style="color: #60a5fa; margin-bottom: 10px;">📄 PDF Content (Complete):</h3>
+                        <pre style="background: #0f172a; color: #10b981; padding: 15px; border-radius: 6px; overflow-x: auto; margin-bottom: 20px; font-size: 11px; line-height: 1.4; max-height: 400px;">${(data.pdfContent || 'No PDF content found').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                        
+                        <h3 style="color: #60a5fa; margin-bottom: 10px;">📋 XML Content:</h3>
+                        <pre style="background: #0f172a; color: #fbbf24; padding: 15px; border-radius: 6px; overflow-x: auto; margin-bottom: 20px; font-size: 11px; line-height: 1.4; max-height: 300px;">${JSON.stringify(data.xmlContent, null, 2).replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                        
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="this.parentElement.parentElement.parentElement.remove()" style="flex: 1; background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                                Close
+                            </button>
+                            <button onclick="const content = document.querySelector('pre').innerText; const blob = new Blob([content], {type: 'text/plain'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'extraction_${jobId}.txt'; a.click();" style="flex: 1; background: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer;">
+                                Download Full Content
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.appendChild(modal);
+            } catch (error) {
+                alert('Failed to fetch extraction data: ' + error.message);
+            }
+        });
+        
+        // =====================================================
+        // INITIALIZATION
+        // =====================================================
+        
+        // Initialize Socket.io connection on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeSocket();
+        });
+        
+        // Also initialize if DOM is already loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeSocket);
+        } else {
+            initializeSocket();
+        }
+    </script>
+</body>
+</html>

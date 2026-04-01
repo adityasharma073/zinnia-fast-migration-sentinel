@@ -1,0 +1,259 @@
+================================================================================
+SYSTEM ARCHITECTURE & DATA FLOW VISUALIZATION
+================================================================================
+
+                              ┌─────────────────────────────────┐
+                              │   BROWSER (http://localhost:3000)│
+                              │                                   │
+                              │   Frontend Dashboard UI           │
+                              │   - Drag & Drop Upload Zone       │
+                              │   - Pipeline Status Display       │
+                              │   - Report Dashboard              │
+                              └──────────────┬──────────────────┘
+                                             │
+                                   HTTP POST │
+                            /api/analyze-timeline
+                                   FormData │
+                                   (files)  │
+                                             │
+                    ┌────────────────────────┴────────────────────────┐
+                    │                                                   │
+                    ▼                                                   │
+          ┌─────────────────────┐                                      │
+          │  NODE.JS SERVER     │                                      │
+          │  (localhost:3000)   │                                      │
+          │                     │                                      │
+          │ - Express.js App    │  JSON Response (202 Accepted)       │
+          │ - Multer Upload     │  {jobId, fileCount, message}        │
+          │ - CORS Handler      │  ◄────────────────────────────────┘
+          │ - Kafka Producer    │
+          │                     │
+          │ Actions:            │
+          │ 1. Receive files    │
+          │ 2. Save to ./uploads/
+          │ 3. Generate jobId   │
+          │ 4. Push to Kafka    │
+          └─────────────┬───────┘
+                        │
+                        │ Kafka Message:
+                        │ {
+                        │   jobId: "abc123...",
+                        │   statements: [
+                        │     "/path/to/file1.pdf",
+                        │     "/path/to/file2.xml"
+                        │   ]
+                        │ }
+                        │
+                        ▼
+          ┌──────────────────────────────────────┐
+          │   APACHE KAFKA BROKER (port 9092)    │
+          │   Topic: policy-timeline-jobs        │
+          │                                       │
+          │   [Message Queue]                     │
+          │   ├─ Job1: file1.pdf, file2.xml      │
+          │   ├─ Job2: file3.pdf                 │
+          │   └─ Job3: file4.xml                 │
+          └──────────────┬───────────────────────┘
+                         │
+                         │ Kafka Consumer Pull
+                         │
+                         ▼
+          ┌──────────────────────────────┐
+          │   PYTHON WORKER              │
+          │   (localhost:9092 Consumer)  │
+          │                              │
+          │ Actions:                     │
+          │ 1. Listen on Kafka topic     │
+          │ 2. Receive job message       │
+          │ 3. Parse jobId & file paths  │
+          │ 4. Call extractor.py for    │
+          │    each file                 │
+          │ 5. Extract PDF & XML data    │
+          │ 6. Run mock_analyze_timeline │
+          │ 7. Generate anomaly report   │
+          │ 8. Save to ./reports/        │
+          └──────────────┬───────────────┘
+                         │
+                         │ Generated Report:
+                         │ report_abc123...json
+                         │
+                         ▼
+          ┌───────────────────────────────────┐
+          │  OUTPUT: ./reports/ folder         │
+          │                                    │
+          │  report_abc123def456.json          │
+          │  {                                 │
+          │    "jobId": "abc123def456",        │
+          │    "filesProcessed": 2,            │
+          │    "anomalies": [                  │
+          │      {                             │
+          │        "type": "Death Benefit Drop"│
+          │        "severity": "CRITICAL",     │
+          │        "value": "90% decrease"     │
+          │      },                            │
+          │      {                             │
+          │        "type": "Fee Spike",        │
+          │        "severity": "HIGH",         │
+          │        "value": "450% increase"    │
+          │      }                             │
+          │    ]                               │
+          │  }                                 │
+          └───────────────────────────────────┘
+
+
+================================================================================
+DATA FLOW SEQUENCE DIAGRAM
+================================================================================
+
+TIME   │ BROWSER          │ NODE.JS SERVER   │ KAFKA BROKER    │ PYTHON WORKER
+       │                  │                  │                 │
+T=0s   │ User drags files │                  │                 │
+       │ Drag event       │                  │                 │
+       │ triggered        │                  │                 │
+       │                  │                  │                 │
+T=1s   │ POST with files  │                  │                 │
+       │ ─────────────────>                  │                 │
+       │                  │ Receive files    │                 │
+       │                  │ Save to /uploads │                 │
+       │                  │ Generate jobId   │                 │
+       │                  │                  │                 │
+T=2s   │                  │ Create Kafka msg │                 │
+       │                  │ ──────────────────> Enqueue job    │
+       │                  │                  │                 │
+       │ <────────────────────────────────── │                 │
+       │ 202 Accepted     │                  │                 │
+       │ Show pipeline    │                  │                 │
+       │ animation        │                  │                 │
+       │                  │                  │                 │
+T=3s   │ Pipeline status  │                  │ Waiting...      │ Listen on topic
+       │ "Ingesting..."   │                  │                 │
+       │                  │                  │                 │
+T=4s   │ Pipeline status  │                  │                 │ Poll messages
+       │ "Queuing..."     │                  │ ────────────────> Received job!
+       │                  │                  │                 │
+T=5s   │ Pipeline status  │                  │                 │ Extract files
+       │ "AI Analysis"    │                  │                 │ Process data
+       │                  │                  │                 │
+T=6s   │                  │                  │                 │ Running analysis
+T=7s   │                  │                  │                 │ Generating report
+       │                  │                  │                 │
+T=8s   │ Pipeline status  │                  │                 │ Save report
+       │ "Generating      │                  │                 │ report_xyz.json
+       │  Report"         │                  │                 │
+       │                  │                  │                 │
+T=9s   │ Show results on  │                  │                 │ Job complete
+       │ dashboard        │                  │                 │ Ready for next job
+
+
+================================================================================
+COMPONENT REQUIREMENTS
+================================================================================
+
+KAFKA (Docker Container)
+├─ Image: apache/kafka:latest
+├─ Mode: KRaft (no Zookeeper)
+├─ Port: 9092 (PLAINTEXT)
+├─ Topic: policy-timeline-jobs (auto-created)
+└─ Data: Temporary (resets on container restart)
+
+NODE.JS SERVER
+├─ Framework: Express.js
+├─ Port: 3000
+├─ Dependencies: express, multer, cors, kafkajs
+├─ Endpoints:
+│  └─ POST /api/analyze-timeline (accepts files)
+├─ Directories:
+│  └─ ./uploads/ (stores uploaded files)
+└─ Features:
+   ├─ Multer file upload handler
+   ├─ Kafka producer to topic
+   ├─ CORS enabled
+   ├─ Static file serving (public/ folder)
+   └─ Error handling & logging
+
+PYTHON WORKER
+├─ Framework: Kafka-python consumer
+├─ Connection: localhost:9092
+├─ Topic: policy-timeline-jobs
+├─ Dependencies: kafka-python, (extractor dependencies)
+├─ Directories:
+│  ├─ ./uploads/ (reads uploaded files)
+│  └─ ./reports/ (saves generated reports)
+├─ Functions:
+│  ├─ extract_and_normalize() - from extractor.py
+│  ├─ mock_analyze_timeline() - simulates AI
+│  └─ start_consumer() - Kafka listener
+└─ Output: JSON anomaly reports
+
+FRONTEND UI
+├─ Location: ./public/index.html
+├─ Technology: HTML5, Tailwind CSS, Vanilla JS
+├─ Server: Express static middleware
+├─ API Endpoint: POST /api/analyze-timeline
+├─ Features:
+│  ├─ Drag & drop file upload
+│  ├─ Real-time pipeline visualization
+│  ├─ Report dashboard
+│  ├─ Status indicators
+│  └─ Error handling
+└─ Design: Dark mode, glassmorphism, Enterprise FinTech theme
+
+
+================================================================================
+KEY FILES REFERENCE
+================================================================================
+
+Configuration:
+  docker-compose.yml       - Kafka container config
+  package.json            - Node.js dependencies
+  worker_requirements.txt - Python dependencies
+
+Source Code:
+  server.js               - Node.js Express server
+  worker.py               - Python Kafka worker
+  extractor.py            - PDF/XML data extraction
+  public/index.html       - Frontend dashboard
+
+Sample Data:
+  sample_sor.pdf          - Sample insurance statement PDF
+  sample_data.xml         - Sample XML data
+
+Output:
+  ./uploads/              - User uploaded files
+  ./reports/              - Generated anomaly reports
+
+
+================================================================================
+SUCCESS INDICATORS
+================================================================================
+
+When the system is working correctly:
+
+1. KAFKA
+   ✓ Docker container is running (docker-compose ps)
+   ✓ Port 9092 is listening
+   ✓ Topic "policy-timeline-jobs" exists
+   ✓ Can publish and consume messages
+
+2. NODE.JS SERVER
+   ✓ Starts without errors
+   ✓ Message: "Server running on http://localhost:3000"
+   ✓ Frontend dashboard loads at http://localhost:3000
+   ✓ File upload zone appears and is interactive
+   ✓ Accepts file uploads without errors
+
+3. PYTHON WORKER
+   ✓ Starts without errors
+   ✓ Message: "Worker started. Listening for jobs..."
+   ✓ Connects to Kafka successfully
+   ✓ Receives and processes jobs from queue
+   ✓ Creates files in ./reports/
+
+4. END-TO-END FLOW
+   ✓ Upload files via browser → 202 Accepted response
+   ✓ Worker receives and processes job
+   ✓ Anomaly report generated and saved
+   ✓ Pipeline visualization completes on UI
+   ✓ No errors in any terminal
+
+================================================================================

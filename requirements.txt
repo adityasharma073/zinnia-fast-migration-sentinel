@@ -1,0 +1,13 @@
+# Document Reconciliation Pipeline - Data Extraction Microservice
+# Python 3.9+ required
+
+# Core dependencies
+PyMuPDF>=1.23.0         # Lightweight PDF text extraction (no model download needed)
+xmltodict>=0.13.0       # Clean XML to dictionary conversion
+
+# Data processing
+python-dateutil>=2.8.2  # Robust date/time handling
+
+# Optional but recommended for production
+python-dotenv>=1.0.0    # Environment variable management for config
+pydantic>=2.0.0         # Data validation using Python type annotations

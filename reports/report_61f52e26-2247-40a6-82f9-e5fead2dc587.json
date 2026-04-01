@@ -1,0 +1,65 @@
+{
+  "status": "success",
+  "analysis_type": "policy_timeline_anomaly_detection",
+  "model": "mock-ai-v1.0",
+  "confidence_score": 0.87,
+  "anomalies": [
+    {
+      "type": "death_benefit_drop",
+      "severity": "critical",
+      "description": "Sudden 90% drop in death benefit value",
+      "value_before": 500000,
+      "value_after": 50000,
+      "change_percentage": -90.0,
+      "detected_period": "Q4 2024",
+      "risk_level": "HIGH",
+      "recommendation": "Investigate policy adjustment or potential data entry error"
+    },
+    {
+      "type": "fee_spike",
+      "severity": "high",
+      "description": "Unexpected 300% increase in annual fees",
+      "previous_annual_fee": 1200,
+      "current_annual_fee": 3600,
+      "change_percentage": 200.0,
+      "detected_period": "2026-Q1",
+      "risk_level": "MEDIUM",
+      "recommendation": "Review rider charges and policy amendments"
+    },
+    {
+      "type": "premium_irregularity",
+      "severity": "medium",
+      "description": "Irregular premium payment pattern detected",
+      "pattern": "payments skipped in months 2, 5, 8, 11",
+      "likelihood": "payment processing error",
+      "risk_level": "LOW",
+      "recommendation": "Verify payment method and contact policyholder"
+    }
+  ],
+  "summary": {
+    "total_anomalies_detected": 3,
+    "critical_count": 1,
+    "high_count": 1,
+    "medium_count": 1,
+    "requires_human_review": true,
+    "automated_action": "FLAG_FOR_REVIEW"
+  },
+  "timeline_metrics": {
+    "documents_analyzed": 1,
+    "time_periods_covered": "2013-2026",
+    "data_quality_score": 0.95,
+    "completeness": "95%"
+  },
+  "processed_at": "2026-03-30T11:10:22.602365Z",
+  "processing_time_seconds": 2.0,
+  "job_metadata": {
+    "jobId": "61f52e26-2247-40a6-82f9-e5fead2dc587",
+    "file_count": 2,
+    "files_processed": [
+      "/Users/zinnia_india/Documents/Zinniovate/uploads/1774869020510_sample_sor.pdf",
+      "/Users/zinnia_india/Documents/Zinniovate/uploads/1774869020514_Tarun_Khatrii_PM.pdf"
+    ],
+    "job_submitted_at": "2026-03-30T11:10:20.516Z",
+    "analysis_completed_at": "2026-03-30T11:10:22.603295Z"
+  }
+}

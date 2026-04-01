@@ -1,0 +1,168 @@
+================================================================================
+QUICK TERMINAL COMMANDS - Copy & Paste Ready
+================================================================================
+
+You need 3 terminals running simultaneously:
+
+================================================================================
+TERMINAL 1: KAFKA (Already Running - Just Verify)
+================================================================================
+
+$ docker-compose ps
+
+(Output should show kafka-broker as "Up")
+
+If not running, start it:
+$ docker-compose up -d kafka
+
+
+================================================================================
+TERMINAL 2: NODE.JS SERVER
+================================================================================
+
+Copy and paste these commands exactly:
+
+cd /Users/zinnia_india/Documents/Zinniovate
+npm install
+node server.js
+
+Expected output when server starts:
+✓ Server running on http://localhost:3000
+✓ Kafka producer ready on localhost:9092
+
+Once you see this, the server is ready! Keep this terminal OPEN.
+
+
+================================================================================
+TERMINAL 3: PYTHON WORKER
+================================================================================
+
+Copy and paste these commands exactly:
+
+cd /Users/zinnia_india/Documents/Zinniovate
+source venv/bin/activate
+pip install -r worker_requirements.txt
+python3 worker.py
+
+Expected output when worker starts:
+[2026-03-30 15:XX:XX] Worker started. Listening for jobs on policy-timeline-jobs...
+[2026-03-30 15:XX:XX] Connected to Kafka at localhost:9092
+
+Once you see this, the worker is ready! Keep this terminal OPEN.
+
+
+================================================================================
+BROWSER: ACCESS THE FRONTEND UI
+================================================================================
+
+Open your web browser and go to:
+
+http://localhost:3000
+
+You should see a dark-themed dashboard with:
+- "System Online" indicator (top right, green)
+- Large drag-and-drop file upload zone
+- Text: "Drop Historical Statements Here (Up to 5 PDFs)"
+- "Reset Dashboard" button at the bottom
+
+
+================================================================================
+TESTING THE COMPLETE FLOW
+================================================================================
+
+While all 3 terminals are running (Kafka, Node.js, Worker) AND you have
+the browser open to http://localhost:3000:
+
+1. DRAG & DROP FILES INTO THE UI:
+   
+   Files to use:
+   - sample_sor.pdf
+   - sample_data.xml
+   
+   These are located in: /Users/zinnia_india/Documents/Zinniovate/
+   
+   Either:
+   a) Drag them from Finder into the browser upload zone
+   b) Click the upload zone to browse and select
+
+2. WATCH WHAT HAPPENS:
+
+   Browser UI will show:
+   - Files appearing in the upload area
+   - Pipeline status: "Ingesting Files" → "Queuing in Kafka" → "AI Analysis" → "Generating Report"
+   - Status badge showing job progress
+
+   Terminal 2 (Node.js) will show:
+   - "Received 2 files for job [jobId]"
+   - "Files saved to ./uploads/"
+   - "Message pushed to Kafka"
+
+   Terminal 3 (Worker) will show:
+   - "Received job: [jobId]"
+   - "Processing file: sample_sor.pdf"
+   - "Processing file: sample_data.xml"
+   - "Running mock AI analysis..."
+   - "Report saved: reports/report_[jobId].json"
+
+3. CHECK THE GENERATED REPORT:
+
+   In any terminal, run:
+   $ cat reports/report_*.json
+   
+   You should see a JSON file with anomalies like:
+   - "Death Benefit Drop: 90% decrease"
+   - "Fee Spike: 450% increase"
+
+
+================================================================================
+FILE LOCATIONS
+================================================================================
+
+Sample files to test with:
+/Users/zinnia_india/Documents/Zinniovate/sample_sor.pdf
+/Users/zinnia_india/Documents/Zinniovate/sample_data.xml
+
+Output directories:
+Uploaded files:
+/Users/zinnia_india/Documents/Zinniovate/uploads/
+
+Generated reports:
+/Users/zinnia_india/Documents/Zinniovate/reports/
+
+
+================================================================================
+STOPPING EVERYTHING
+================================================================================
+
+Terminal 2: Press Ctrl+C (stops Node.js)
+Terminal 3: Press Ctrl+C (stops Worker)
+
+To stop Kafka (in Terminal 1 or a new terminal):
+$ docker-compose down
+
+
+================================================================================
+TROUBLESHOOTING QUICK FIXES
+================================================================================
+
+Server won't start?
+$ npm install
+$ npm ls express multer cors kafkajs
+
+Worker won't start?
+$ source venv/bin/activate
+$ pip install -r worker_requirements.txt
+$ python3 -c "import kafka; print('OK')"
+
+Kafka connection error?
+$ docker-compose ps
+$ docker-compose logs kafka | tail -20
+
+Port 3000 already in use?
+$ lsof -ti:3000 | xargs kill -9
+$ node server.js
+
+No messages in Kafka?
+$ docker-compose exec kafka bash -c "/opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic policy-timeline-jobs --from-beginning"
+
+================================================================================
